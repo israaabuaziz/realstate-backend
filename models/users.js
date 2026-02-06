@@ -8,8 +8,22 @@ const userSchema = new mongoose.Schema({
     isPhoneVerified: { type: Boolean, default: false },
     isNationalIdVerified: { type: Boolean, default: false },
     verificationCode: { type: String },
-    loginOtp: String,
-    otpExpires: Date
+    forgotPasswordOtp: {
+        type: String,
+        default: null
+    },
+    forgotPasswordOtpExpires: {
+        type: Date,
+        default: null
+    },
+    loginOtp: {
+        type: String,
+        default: null
+    },
+    otpExpires: {
+        type: Date,
+        default: null
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.models.User || mongoose.model('User', userSchema);
