@@ -28,6 +28,9 @@ const contractSchema = new mongoose.Schema({
         required: true
     },
     ownershipPercentage: {
+
+
+        
         type: Number,
         required: true,
         min: 0,
@@ -145,6 +148,18 @@ const contractSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Transaction'
     },
+    zamamId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Zamam'
+    },
+    zamamShare: {
+        type: Number, 
+        min: 0
+    },
+    isZamamContract: {
+        type: Boolean,
+        default: false
+    }
 
 }, { 
     timestamps: true,
@@ -174,5 +189,5 @@ contractSchema.virtual('formattedPrice').get(function() {
 contractSchema.virtual('formattedArea').get(function() {
     return this.area ? this.area.toLocaleString('ar-EG') + ' م²' : 'غير محدد';
 });
-
+contractSchema.index({ zamamId: 1 });
 module.exports = mongoose.model('Contract', contractSchema);
