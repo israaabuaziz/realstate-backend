@@ -9,7 +9,7 @@ const InheritanceExecution = require('../models/InheritanceExecution');
 const InheritanceCalculator = require('../controllers/inheritanceController'); 
 const bcrypt = require('bcryptjs');
 const { authenticateToken } = require('../middleware/auth');
-const { v4: uuidv4 } = require('uuid');
+const Zamam = require('../models/Zamam');
 
 const authenticateAdmin = async (req, res, next) => {
     try {
@@ -65,13 +65,15 @@ router.get('/dashboard' ,authenticateToken, authenticateAdmin, async (req, res) 
         
         const recentContracts = await Contract.find()
             .populate('userId', 'fullName phoneNumber')
-            .select('contractNumber propertyType price status createdAt contractImage imageName')
+            .populate('zamamId')  
+            .select('contractNumber propertyType price status createdAt contractImage imageName fullName phoneNumber area zamamId zamamShare isZamamContract')
             .sort('-createdAt')
             .limit(10);
         
         const pendingContractsList = await Contract.find({ status: 'pending' })
             .populate('userId', 'fullName phoneNumber')
-            .select('contractNumber propertyType price status createdAt contractImage imageName fullName phoneNumber formattedPrice formattedArea')
+            .populate('zamamId') 
+            .select('contractNumber propertyType price status createdAt contractImage imageName fullName phoneNumber nationalId ownershipPercentage address governorate floor area notes zamamId zamamShare isZamamContract')
             .sort('-createdAt')
             .limit(20);
         
@@ -81,7 +83,7 @@ router.get('/dashboard' ,authenticateToken, authenticateAdmin, async (req, res) 
                 activeUsers,
                 inactiveUsers,
                 totalContracts: pendingContracts + approvedContracts + rejectedContracts + completedContracts,
-                pendingContracts,
+                pendingContracts, 
                 approvedContracts,
                 rejectedContracts,
                 completedContracts,
@@ -90,7 +92,11 @@ router.get('/dashboard' ,authenticateToken, authenticateAdmin, async (req, res) 
             },
             users: usersWithContracts,
             recentContracts,
-            pendingContracts: pendingContractsList
+            pendingContracts: pendingContractsList.map(c => ({
+        ...c.toObject(),
+        formattedPrice: c.price ? c.price.toLocaleString('ar-EG') + ' جنيه' : 'غير محدد',
+        formattedArea: c.area ? c.area.toLocaleString('ar-EG') + (c.isZamamContract ? ' فدان' : ' م²') : 'غير محدد',
+    }))
         });
     } catch (error) {
         console.error('Dashboard error:', error);
@@ -312,7 +318,16 @@ router.put('/contracts/:contractId/accept', authenticateToken, authenticateAdmin
         contract.approvedAt = Date.now();
         contract.approvedBy = req.user.id;
         await contract.save();
-        
+if (contract.isZamamContract && contract.zamamId) {
+    const zamam = await Zamam.findById(contract.zamamId);
+    if (zamam) {
+        const userPercentage = (contract.zamamShare / zamam.totalArea) * 100;
+        const newOwnedPercentage = zamam.ownedArea + userPercentage; 
+        zamam.ownedArea = newOwnedPercentage;
+        await zamam.save();
+        console.log(`✅ Updated zamam ${zamam.zamamNumber}: ownedArea = ${newOwnedPercentage}% / 100%`);
+    }
+}
         const notification = new Notification({
             userId: contract.userId._id,
             type: 'contract_approved',
