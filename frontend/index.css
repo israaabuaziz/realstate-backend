@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+.input {
+  @apply w-full border rounded px-4 py-2 text-sm;
+}
+
+/* Toggle Switch */
+.toggle {
+  width: 42px;
+  height: 22px;
+  background: #d1d5db;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+}
+.toggle::after {
+  content: "";
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}
+.toggle.on {
+  background: #2563eb;
+}
+.toggle.on::after {
+  right: 22px;
+}
